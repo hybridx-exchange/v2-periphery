@@ -1,7 +1,11 @@
 pragma solidity >=0.5.0;
 
-import '../interfaces/IUniswapV2Pair.sol';
+import "../interfaces/IOrderBook.sol";
+import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IUniswapV2Factory.sol";
 import "./SafeMath.sol";
+
+import "./HybridLibrary.sol";
 
 library UniswapV2Library {
     using SafeMath for uint;
@@ -64,7 +68,39 @@ library UniswapV2Library {
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+
+            address orderBook = HybridLibrary.getOrderBook(factory, path[i], path[i + 1]);
+            uint tradeDirection = HybridLibrary.getTradeDirection(orderBook, path[i - 1], path[i]); //方向可能等于0
+            uint orderDirection = tradeDirection == 1 ? tradeDirection << 1 : tradeDirection >> 1; //1->2 /2->1 /0->0
+
+            //path[i-1]兑换path[i], 获取path[i]问的path[i-1]的挂单价格以及对应的数量, 按与当前价格的距离排序
+            (uint[] memory priceArray, uint[] memory amountArray) = HybridLibrary.getMarketOrder(orderBook, orderDirection);
+            require(priceArray.length == amountArray.length, 'UniswapV2Library: INVALID_MARKET_BOOK');
+
+            uint decimal = HybridLibrary.getPriceDecimal(orderBook, path[i - 1], path[i]);
+            uint amountLeft = amounts[i];
+            uint amountOut = 0;
+            for (uint j = 0; j < priceArray.length; j++) {
+                uint amountUsed;
+                //先计算pair从当前价格到price[j]消耗amountIn的数量
+                (amountUsed, reserveIn, reserveOut) = HybridLibrary.getAmountForMovePrice(tradeDirection, reserveIn, reserveOut, priceArray[j], decimal);
+                //再计算本次移动价格获得的amountOut
+                amountOut += amountUsed > amountLeft ? getAmountOut(amountLeft, reserveIn, reserveOut) : getAmountOut(amountUsed, reserveIn, reserveOut);
+                //再计算还剩下的amountIn
+                amountLeft = amountUsed < amountLeft ? amountLeft - amountUsed : 0;
+                if (amountLeft == 0) {
+                    break;
+                }
+
+                //计算消耗掉一个价格的挂单需要的amountIn数量
+                (uint amountInForTake, uint amountOutWithFee) = HybridLibrary.getAmountForTakePrice(tradeDirection, amountLeft, priceArray[j], decimal, amountArray[j]);
+                amountOut += amountOutWithFee;
+                if (amountLeft >= amountInForTake) {
+                    break;
+                }
+            }
+
+            amounts[i + 1] = amountOut;
         }
     }
 
@@ -75,7 +111,39 @@ library UniswapV2Library {
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+
+            address orderBook = HybridLibrary.getOrderBook(factory, path[i], path[i + 1]);
+            uint tradeDirection = HybridLibrary.getTradeDirection(orderBook, path[i - 1], path[i]); //方向可能等于0
+            uint orderDirection = tradeDirection == 1 ? tradeDirection << 1 : tradeDirection >> 1; //1->2 /2->1 /0->0
+
+            //判断是否有买单
+            (uint[] memory priceArray, uint[] memory amountArray) = HybridLibrary.getMarketOrder(orderBook, orderDirection);
+            require(priceArray.length == amounts.length, 'UniswapV2Library: INVALID_MARKET_BOOK');
+
+            uint decimal = HybridLibrary.getPriceDecimal(orderBook, path[i - 1], path[i]);
+            //先计算从当前价格到price[i]消耗的数量
+            uint amountLeft = amounts[i];
+            uint amountIn = 0;
+            for (uint j = 0; j < priceArray.length; j++) {
+                uint amountUsed;
+                //先计算pair从当前价格到price[j]消耗amountOut的数量
+                (amountUsed, reserveIn, reserveOut) = HybridLibrary.getAmountForMovePrice(tradeDirection, reserveIn, reserveOut, priceArray[j], decimal);
+                amountIn += amountUsed > amountLeft ? getAmountIn(amountLeft, reserveIn, reserveOut) : getAmountIn(amountUsed, reserveIn, reserveOut);
+                //再计算还剩下的amountIn
+                amountLeft = amountUsed < amountLeft ? amountLeft - amountUsed : 0;
+                if (amountLeft == 0) {
+                    break;
+                }
+
+                //计算消耗掉一个价格的挂单需要的amountOut数量
+                (uint amountOutForTake, uint amountInWithFee) = HybridLibrary.getAmountForTakePrice(tradeDirection, amountLeft, priceArray[j], decimal, amountArray[j]);
+                amountIn += amountInWithFee;
+                if (amountLeft >= amountOutForTake) {
+                    break;
+                }
+            }
+
+            amounts[i - 1] = amountIn;
         }
     }
 }
