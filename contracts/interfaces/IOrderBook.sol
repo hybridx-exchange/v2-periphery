@@ -1,7 +1,7 @@
 pragma solidity >=0.6.2;
 
 interface IOrderBook {
-    function initialize(address baseToken, address quoteToken, uint priceStep, uint amountStep) external;
+    function initialize(address baseToken, address quoteToken, uint priceStep, uint minAmount) external;
     function createBuyLimitOrder(address user, uint amountOffer, uint price, address to) external returns (uint);
     function createSellLimitOrder(address user, uint amountOffer, uint price, address to) external returns (uint);
     function cancelLimitOrder(uint orderId) external;
