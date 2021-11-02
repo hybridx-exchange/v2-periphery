@@ -21,36 +21,50 @@ library HybridLibrary {
     }
 
     // fetches market order book for a pair for swap tokenA to takenB
-    function getOrderBook(address factory, address tokenA, address tokenB) internal view returns (address orderBook) {
-        address pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
+    function getOrderBook(address factory, address tokenIn, address tokenOut)
+    internal
+    view
+    returns (address orderBook) {
+        address pair = IUniswapV2Factory(factory).getPair(tokenIn, tokenOut);
         if (pair != address(0)) {
             orderBook = IUniswapV2Pair(pair).orderBook();
         }
     }
 
-    function getTradeDirection(address orderBook, address tokenA, address tokenB) internal view returns(uint direction) {
+    function getTradeDirection(
+        address orderBook,
+        address tokenIn)
+    internal
+    view
+    returns(uint direction) {
         if (orderBook != address(0)) {
             //如果tokenA是计价token, 则表示买, 反之则表示卖
-            direction = IOrderBook(orderBook).tradeDirection(tokenA, tokenB);
+            direction = IOrderBook(orderBook).tradeDirection(tokenIn);
         }
     }
 
-    function getPriceDecimal(address orderBook, address tokenA, address tokenB) internal view returns (uint decimal) {
+    function getPriceDecimal(address orderBook) internal view returns (uint decimal) {
         if (orderBook != address(0)) {
-            decimal = IOrderBook(orderBook).priceDecimal(tokenA, tokenB);
+            decimal = IOrderBook(orderBook).priceDecimal();
         }
     }
 
     // fetches market order book for a pair for swap tokenA to takenB
-    function getMarketOrder(address orderBook, uint orderDirection) internal view returns (uint[] memory prices, uint[] memory amounts) {
+    function getNextBook(
+        address orderBook,
+        uint orderDirection,
+        uint curPrice)
+    internal
+    view
+    returns (uint nextPrice, uint amount) {
         if (orderBook != address(0)) {
-            (prices, amounts) = IOrderBook(orderBook).marketOrder(orderDirection);
+            (nextPrice, amount) = IOrderBook(orderBook).nextBook(orderDirection, curPrice);
         }
     }
 
     //将价格移动到price需要消息的tokenA的数量, 以及新的reserveIn, reserveOut
     function getAmountForMovePrice(uint direction, uint reserveIn, uint reserveOut, uint price, uint decimal)
-    internal pure returns (uint amountIn, uint reserveInNew, uint reserveOutNew) {
+    internal pure returns (uint amountIn, uint amountOut, uint reserveInNew, uint reserveOutNew) {
         (uint baseReserve, uint quoteReserve) = (reserveIn, reserveOut);
         if (direction == 1) {//buy (quoteToken == tokenA)  用tokenA换tokenB
             (baseReserve, quoteReserve) = (reserveOut, reserveIn);
@@ -62,7 +76,7 @@ library HybridLibrary {
             //再计算y' = (997 * x * p - 1000 * y) / 997
             amountIn = b1 > q1 ? (b1 - q1) / 997 : 0;
             //再计算x'
-            uint amountOut = amountIn != 0 ? UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut) : 0;
+            amountOut = amountIn != 0 ? UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut) : 0;
             //再更新reserveInNew = reserveIn - x', reserveOutNew = reserveOut + y'
             (reserveInNew, reserveOutNew) = (reserveIn + amountIn, reserveOut - amountOut);
         }
@@ -75,7 +89,7 @@ library HybridLibrary {
             //再计算x' = (997 * y * p - 1000 * x) / 997
             amountIn = q1 > b1 ? (q1 - b1) / 997 : 0;
             //再计算y' = (1-0.3%) x' / p
-            uint amountOut = amountIn != 0 ? UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut) : 0;
+            amountOut = amountIn != 0 ? UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut) : 0;
             //再更新reserveInNew = reserveIn + x', reserveOutNew = reserveOut - y'
             (reserveInNew, reserveOutNew) = (reserveIn + amountIn, reserveOut - amountOut);
         }
@@ -86,99 +100,155 @@ library HybridLibrary {
 
     //使用amountA数量的amountInOffer吃掉在价格price, 数量为amountOutOffer的tokenB, 返回实际消耗的tokenA数量和返回的tokenB的数量，amountOffer需要考虑手续费
     //手续费应该包含在amountOutWithFee中
-    function getAmountForTakePrice(uint direction, uint amountInOffer, uint price, uint decimal, uint amountOutOffer)
+    function getAmountOutForTakePrice(uint direction, uint amountInOffer, uint price, uint decimal, uint orderAmount)
     internal pure returns (uint amountIn, uint amountOutWithFee) {
-        if (direction == 1) { //buy (quoteToken == tokenA)  用tokenA（usdc)换tokenB(btc)
+        if (direction == 1) { //buy (quoteToken == tokenIn)  用tokenIn（usdc)换tokenOut(btc)
+            //amountOut = amountInOffer / price
             uint amountOut = getAmountOutWithPrice(amountInOffer, price, decimal);
-            if (amountOut.mul(1000) <= amountOutOffer.mul(997)) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
+            if (amountOut.mul(1000) <= orderAmount.mul(997)) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
                 (amountIn, amountOutWithFee) = (amountInOffer, amountOut);
             }
             else {
-                amountOutWithFee = amountOutOffer.mul(997) / 1000;
-                amountIn = getAmountInWithPrice(amountOutWithFee, price, decimal);
+                uint amountOutWithoutFee = orderAmount.mul(997) / 1000;//吃掉所有
+                //amountIn = amountOutWithoutFee * price
+                (amountIn, amountOutWithFee) = (getAmountInWithPrice(amountOutWithoutFee, price, decimal),
+                orderAmount);
             }
         }
-        else if (direction == 2) { //sell (quoteToken == tokenB) 用tokenA(btc)换tokenB(usdc)
-            uint amountOut = getAmountOutWithPrice(amountInOffer, price, decimal);
-            if (amountOut.mul(1000) <= amountOutOffer.mul(997)) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
+        else if (direction == 2) { //sell (quoteToken == tokenOut) 用tokenIn(btc)换tokenOut(usdc)
+            //amountOut = amountInOffer * price
+            uint amountOut = getAmountInWithPrice(amountInOffer, price, decimal);
+            if (amountOut.mul(1000) <= orderAmount.mul(997)) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
                 (amountIn, amountOutWithFee) = (amountInOffer, amountOut);
             }
             else {
-                amountOutWithFee = amountOutOffer.mul(997) / 1000;
-                amountIn = getAmountInWithPrice(amountOutWithFee, price, decimal);
+                uint amountOutWithoutFee = orderAmount.mul(997) / 1000;
+                //amountIn = amountOutWithoutFee / price
+                (amountIn, amountOutWithFee) = (getAmountOutWithPrice(amountOutWithoutFee, price,
+                    decimal), orderAmount);
             }
         }
     }
 
-    //提供amountIn数量的挂单，成交后会得到多少amountOut，包含手续费
-    function getAmountForOfferPrice(uint amountIn, uint price, uint decimal)
-    internal pure returns (uint amountOutWithFee) {
-        uint amountInExcludeFee = amountIn.mul(997) / 1000;
-        amountOutWithFee = getAmountOutWithPrice(amountInExcludeFee, price, decimal);
+    //期望获得amountOutExpect，需要投入多少amountIn
+    function getAmountInForTakePrice(uint direction, uint amountOutExpect, uint price, uint decimal, uint orderAmount)
+    internal pure returns (uint amountIn, uint amountOutWithFee) {
+        if (direction == 1) { //buy (quoteToken == tokenIn)  用tokenIn（usdc)换tokenOut(btc)
+            uint amountOut = amountOutExpect.mul(997) / 1000;
+            if (amountOut <= orderAmount) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
+                (amountIn, amountOutWithFee) = (getAmountOutWithPrice(amountOut, price, decimal), amountOutExpect);
+            }
+            else {
+                uint amountOutWithoutFee = orderAmount.mul(997) / 1000;//吃掉所有
+                //amountIn = amountOutWithoutFee * price
+                (amountIn, amountOutWithFee) = (getAmountOutWithPrice(amountOutWithoutFee, price, decimal),
+                orderAmount);
+            }
+        }
+        else if (direction == 2) { //sell (quoteToken == tokenOut) 用tokenIn(btc)换tokenOut(usdc)
+            uint amountOut = amountOutExpect.mul(997) / 1000;
+            if (amountOut <= orderAmount) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
+                (amountIn, amountOutWithFee) = (getAmountInWithPrice(amountOut, price, decimal), amountOutExpect);
+            }
+            else {
+                uint amountOutWithoutFee = orderAmount.mul(997) / 1000;
+                //amountIn = amountOutWithoutFee / price
+                (amountIn, amountOutWithFee) = (getAmountInWithPrice(amountOutWithoutFee, price,
+                    decimal), orderAmount);
+            }
+        }
     }
 
-    //需要考虑初始价格到目标价格之间还有其它挂单的情况，需要考虑最小数量
-    function getAmountOutForBuy(address factory, uint amountOffer, uint price, address baseToken, address quoteToken) external view
+    function getAmountsForLimitOrder(
+        address orderBook,
+        uint tradeDirection,
+        uint amountOffer,
+        uint price,
+        uint reserveIn,
+        uint reserveOut)
+    internal
+    view
     returns (uint[] memory amounts) {
-        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
-        address orderBook = getOrderBook(factory, baseToken, quoteToken);
-        require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
-        require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
-
+        uint orderDirection = ~tradeDirection;
         //获取价格范围内的反方向挂单
-        (uint[] memory priceArray, uint[] memory amountArray) = IOrderBook(orderBook).marketRangeOrder(2, price);
-        (uint reserveIn, uint reserveOut) = UniswapV2Library.getReserves(factory, baseToken, quoteToken);
-        uint decimal = getPriceDecimal(orderBook, quoteToken, baseToken);
+        (uint[] memory priceArray, uint[] memory amountArray) = IOrderBook(orderBook).rangeBook(orderDirection, price);
+        uint decimal = getPriceDecimal(orderBook);
         uint amountLeft = amountOffer;
 
         //看看是否需要吃单
         for (uint i=0; i<priceArray.length; i++){
-            uint amountUsed;
-            //先计算pair从当前价格到price[j]消耗amountIn的数量
-            (amountUsed, reserveIn, reserveOut) = getAmountForMovePrice(1, reserveIn, reserveOut, priceArray[i], decimal);
+            uint amountInUsed;
+            uint amountOutUsed;
+            //先计算pair从当前价格到price消耗amountIn的数量
+            (amountInUsed, amountOutUsed, reserveIn, reserveOut) = HybridLibrary.getAmountForMovePrice(
+                tradeDirection, reserveIn, reserveOut, priceArray[i], decimal);
+
             //再计算amm中实际会消耗的amountIn的数量
-            amounts[0] += amountUsed > amountLeft ? amountLeft : amountUsed;
+            amounts[0] += amountInUsed > amountLeft ? amountLeft : amountInUsed;
             //再计算本次移动价格获得的amountOut
-            amounts[1] += amountUsed > amountLeft ? UniswapV2Library.getAmountOut(amountLeft, reserveIn, reserveOut) : UniswapV2Library.getAmountOut
-            (amountUsed, reserveIn, reserveOut);
+            amounts[1] += amountInUsed > amountLeft ? UniswapV2Library.getAmountOut(amountLeft, reserveIn, reserveOut)
+            : amountOutUsed;
             //再计算还剩下的amountIn
-            amountLeft = amountUsed < amountLeft ? amountLeft - amountUsed : 0;
-            if (amountLeft == 0) {
+            if (amountLeft > amountInUsed) {
+                amountLeft = amountLeft - amountInUsed;
+            }
+            else { //amountIn消耗完了
                 break;
             }
 
-            (uint amountInForTake,) = getAmountForTakePrice(1, amountLeft, priceArray[i], decimal, amountArray[i]);
-            if (amountLeft >= amountInForTake) { //amountIn消耗完了
+
+            //计算消耗掉一个价格的挂单需要的amountIn数量
+            (uint amountInForTake, uint amountOutWithFee) = HybridLibrary.getAmountOutForTakePrice(
+                orderDirection, amountLeft, priceArray[i], decimal, amountArray[i]);
+            amounts[3] += amountInForTake;
+            amounts[4] += amountOutWithFee;
+            if (amountLeft > amountInForTake) {
+                amountLeft = amountLeft - amountInForTake;
+            }
+            else{
+                amountLeft = 0;
                 break;
             }
         }
 
-        {
-            uint amountUsed;
-            //处理挂单之外的价格范围
-            (amountUsed, reserveIn, reserveOut) = getAmountForMovePrice(1, reserveIn, reserveOut, price, decimal);
+        if (amountLeft > 0) {
+            uint amountInUsed;
+            uint amountOutUsed;
+            //先计算pair从当前价格到price消耗amountIn的数量
+            (amountInUsed, amountOutUsed, reserveIn, reserveOut) = HybridLibrary.getAmountForMovePrice(
+                tradeDirection, reserveIn, reserveOut, price, decimal);
+
             //再计算amm中实际会消耗的amountIn的数量
-            amounts[0] += amountUsed > amountLeft ? amountLeft : amountUsed;
+            amounts[0] += amountInUsed > amountLeft ? amountLeft : amountInUsed;
             //再计算本次移动价格获得的amountOut
-            amounts[1] += amountUsed > amountLeft ? UniswapV2Library.getAmountOut(amountLeft, reserveIn, reserveOut) : UniswapV2Library.getAmountOut
-            (amountUsed, reserveIn, reserveOut);
-            amounts[2] = amountUsed < amountOffer ? getAmountOutWithPrice(amountOffer-amountUsed, price, decimal) : 0;
+            amounts[1] += amountInUsed > amountLeft ? UniswapV2Library.getAmountOut(amountLeft, reserveIn, reserveOut)
+            : amountOutUsed;
         }
     }
 
     //需要考虑初始价格到目标价格之间还有其它挂单的情况，需要考虑最小数量
-    function getAmountOutForSell(address factory, uint amountOffer, uint price, address baseToken, address quoteToken) external view
-    returns (uint amountAmmOut, uint amountOrderOut) {
+    function getAmountsForBuy(address factory, uint amountOffer, uint price, address baseToken, address quoteToken)
+    external view
+    returns (uint[] memory amounts) { //返回ammAmountIn, ammAmountOut, orderAmountIn, orderAmountOut
         require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
         address orderBook = getOrderBook(factory, baseToken, quoteToken);
         require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
         require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
 
         (uint reserveIn, uint reserveOut) = UniswapV2Library.getReserves(factory, baseToken, quoteToken);
-        uint decimal = getPriceDecimal(orderBook, baseToken, quoteToken);
-        uint amountUsed;
-        //uint amountUsed = getAmountForMovePrice(2, reserveIn, reserveOut, price, decimal);
-        amountAmmOut = amountUsed > amountOffer ? UniswapV2Library.getAmountOut(amountOffer, reserveIn, reserveOut) : UniswapV2Library.getAmountOut(amountUsed, reserveIn, reserveOut);
-        amountOrderOut = amountUsed < amountOffer ? getAmountForOfferPrice(amountOffer-amountUsed, price, decimal) : 0;
+        amounts = getAmountsForLimitOrder(orderBook, 1, amountOffer, price, reserveIn, reserveOut);
+    }
+
+    //需要考虑初始价格到目标价格之间还有其它挂单的情况，需要考虑最小数量
+    function getAmountsForSell(address factory, uint amountOffer, uint price, address baseToken, address quoteToken)
+    external view
+    returns (uint[] memory amounts) { //返回ammAmountIn, ammAmountOut, orderAmountIn, orderAmountOut
+        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
+        address orderBook = getOrderBook(factory, baseToken, quoteToken);
+        require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
+        require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
+
+        (uint reserveIn, uint reserveOut) = UniswapV2Library.getReserves(factory, baseToken, quoteToken);
+        amounts = getAmountsForLimitOrder(orderBook, 2, amountOffer, price, reserveIn, reserveOut);
     }
 }
