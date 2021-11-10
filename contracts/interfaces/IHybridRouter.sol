@@ -1,8 +1,8 @@
 pragma solidity >=0.6.2;
 
-import "./IUniswapV2Router02.sol";
-
-interface IHybridRouter is IUniswapV2Router02 {
+interface IHybridRouter {
+    function factory() external pure returns (address);
+    function WETH() external pure returns (address);
     //创建token买token限价单
     function buyTokenWithToken(
         uint amountOffer,

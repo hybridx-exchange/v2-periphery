@@ -4,13 +4,32 @@
 
 pragma solidity =0.6.6;
 
+import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
+
 import './libraries/HybridLibrary.sol';
+import "./interfaces/IWETH.sol";
 import "./interfaces/IHybridRouter.sol";
 import "./interfaces/IOrderBook.sol";
-import "./UniswapV2Router02.sol";
+import "./interfaces/IOrderBookFactory.sol";
 
-contract HybridRouter is IHybridRouter, UniswapV2Router02 {
-    constructor(address _factory, address _WETH) UniswapV2Router02(_factory, _WETH)public {
+contract HybridRouter is IHybridRouter {
+    using SafeMath for uint;
+
+    address public immutable override factory;
+    address public immutable override WETH;
+
+    modifier ensure(uint deadline) {
+        require(deadline >= block.timestamp, 'UniswapV2Router: EXPIRED');
+        _;
+    }
+
+    constructor(address _factory, address _WETH) public {
+        factory = _factory;
+        WETH = _WETH;
+    }
+
+    receive() external payable {
+        assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
     //创建用QuoteToken买BaseToken限价单 (usdc -> uni)
@@ -27,7 +46,7 @@ contract HybridRouter is IHybridRouter, UniswapV2Router02 {
         ensure(deadline)
         returns (uint orderId) {
         require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
-        address orderBook = HybridLibrary.getOrderBook(factory, baseToken, quoteToken);
+        address orderBook = IOrderBookFactory(factory).getOrderBook(baseToken, quoteToken);
         require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
         require(amountOffer > IOrderBook(orderBook).minAmount(), 'HybridRouter: TooSmall_Amount');
         require(price % IOrderBook(orderBook).priceStep() == 0, 'HybridRouter: Invalid_Price');
@@ -56,7 +75,7 @@ contract HybridRouter is IHybridRouter, UniswapV2Router02 {
         returns (uint orderId)
     {
         require(baseToken == WETH, 'UniswapV2Router: INVALID_PATH');
-        orderId = this.buyTokenWithToken(amountOffer, price, baseToken, quoteToken, to, deadline);
+        orderId= this.buyTokenWithToken(amountOffer, price, baseToken, quoteToken, to, deadline);
     }
 
     //创建用ETH买BaseToken限价单 (eth -> uni)
@@ -75,13 +94,13 @@ contract HybridRouter is IHybridRouter, UniswapV2Router02 {
     {
         require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
         require(quoteToken == WETH, 'HybirdRouter: Invalid_Token');
-        address orderBook = HybridLibrary.getOrderBook(factory, baseToken, quoteToken);
+        address orderBook = IOrderBookFactory(factory).getOrderBook(baseToken, quoteToken);
         require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
         require(msg.value > IOrderBook(orderBook).minAmount(), 'HybridRouter: TooSmall_Amount');
         require(price % IOrderBook(orderBook).priceStep() == 0, 'HybridRouter: Invalid_Price');
         require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
 
-        IWETH(WETH).deposit{value: msg.value}();
+        IWETH(WETH).deposit{value: msg.value}();//挂单不能将eth存放在router下面，需要存在order book上，不然订单成交时没有资金来源
         assert(IWETH(WETH).transfer(orderBook, msg.value));
 
         to = to == address(0) ? msg.sender : to;
@@ -103,7 +122,7 @@ contract HybridRouter is IHybridRouter, UniswapV2Router02 {
         returns (uint orderId)
     {
         require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
-        address orderBook = HybridLibrary.getOrderBook(factory, baseToken, quoteToken);
+        address orderBook = IOrderBookFactory(factory).getOrderBook(baseToken, quoteToken);
         require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
         require(amountOffer > IOrderBook(orderBook).minAmount(), 'HybridRouter: TooSmall_Amount');
         require(price % IOrderBook(orderBook).priceStep() == 0, 'HybridRouter: Invalid_Price');
@@ -151,7 +170,7 @@ contract HybridRouter is IHybridRouter, UniswapV2Router02 {
     {
         require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
         require(baseToken == WETH, 'HybirdRouter: Invalid_Token');
-        address orderBook = HybridLibrary.getOrderBook(factory, baseToken, quoteToken);
+        address orderBook = IOrderBookFactory(factory).getOrderBook(baseToken, quoteToken);
         require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
         require(msg.value > IOrderBook(orderBook).minAmount(), 'HybridRouter: TooSmall_Amount');
         require(price % IOrderBook(orderBook).priceStep() == 0, 'HybridRouter: Invalid_Price');
