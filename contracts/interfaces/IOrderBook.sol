@@ -1,8 +1,9 @@
-pragma solidity >=0.6.2;
+pragma solidity >=0.5.0;
 
 interface IOrderBook {
     //orderbook合约初始化函数
     function initialize(
+        address pair,
         address baseToken,
         address quoteToken,
         uint priceStep,
@@ -89,4 +90,3 @@ interface IOrderBook {
     //更新最小数量
     function minAmountUpdate(uint newMinAmount) external;
 }
-

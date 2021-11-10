@@ -162,22 +162,4 @@ contract HybridRouter is IHybridRouter, UniswapV2Router02 {
         to = to == address(0) ? msg.sender : to;
         orderId = IOrderBook(orderBook).createSellLimitOrder(msg.sender, msg.value, price, to);
     }
-
-    function cancel(
-        uint orderId,
-        address baseToken,
-        address quoteToken,
-        uint deadline)
-        external
-        virtual
-        override
-        ensure(deadline)
-    {
-        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
-        address orderBook = HybridLibrary.getOrderBook(factory, baseToken, quoteToken);
-        require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
-        require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
-
-        IOrderBook(orderBook).cancelLimitOrder(orderId);
-    }
 }

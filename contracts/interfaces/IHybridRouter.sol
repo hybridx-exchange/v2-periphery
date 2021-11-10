@@ -69,11 +69,5 @@ interface IHybridRouter is IUniswapV2Router02 {
         payable
         returns (uint);
 
-    //取消挂单
-    function cancel(
-        uint orderId,
-        address baseToken,
-        address quoteToken,
-        uint deadline)
-        external;
+    //取消挂单 -- 取消挂单涉及权限控制，只能直接由用户向OrderBook合约申请
 }

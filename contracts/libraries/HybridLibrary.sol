@@ -3,6 +3,7 @@ pragma solidity =0.6.6;
 import "../interfaces/IOrderBook.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 import "../interfaces/IUniswapV2Factory.sol";
+import "../interfaces/IOrderBookFactory.sol";
 import "./SafeMath.sol";
 
 import "./UniswapV2Library.sol";
@@ -25,9 +26,9 @@ library HybridLibrary {
     internal
     view
     returns (address orderBook) {
-        address pair = IUniswapV2Factory(factory).getPair(tokenIn, tokenOut);
-        if (pair != address(0)) {
-            orderBook = IUniswapV2Pair(pair).orderBook();
+        address orderBookFactory = IUniswapV2Factory(factory).getOrderBookFactory();
+        if (orderBookFactory != address(0)) {
+            orderBook = IOrderBookFactory(orderBookFactory).getOrderBook(tokenIn, tokenOut);
         }
     }
 
