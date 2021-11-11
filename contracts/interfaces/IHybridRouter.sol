@@ -3,8 +3,9 @@ pragma solidity >=0.6.2;
 interface IHybridRouter {
     function factory() external pure returns (address);
     function WETH() external pure returns (address);
+
     //创建token买token限价单
-    function buyTokenWithToken(
+    function buyWithToken(
         uint amountOffer,
         uint price,
         address baseToken,
@@ -15,18 +16,7 @@ interface IHybridRouter {
         returns (uint);
 
     //创建eth买token限价单
-    function buyEthWithToken(
-        uint amountOffer,
-        uint price,
-        address baseToken,
-        address quoteToken,
-        address to,
-        uint deadline)
-        external
-        returns (uint);
-
-    //创建eth买token限价单
-    function buyTokenWithEth(
+    function buyWithEth(
         uint price,
         address baseToken,
         address quoteToken,
@@ -37,18 +27,7 @@ interface IHybridRouter {
         returns (uint);
 
     //创建token卖为token限价单
-    function sellTokenToToken(
-        uint amountOffer,
-        uint price,
-        address baseToken,
-        address quoteToken,
-        address to,
-        uint deadline)
-        external
-        returns (uint);
-
-    //创建token卖为eth限价单
-    function sellTokenToEth(
+    function sellToken(
         uint amountOffer,
         uint price,
         address baseToken,
@@ -59,7 +38,7 @@ interface IHybridRouter {
         returns (uint);
 
     //创建eth卖为token限价单
-    function sellEthToToken(
+    function sellEth(
         uint price,
         address baseToken,
         address quoteToken,
