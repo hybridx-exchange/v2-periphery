@@ -70,7 +70,7 @@ library UniswapV2Library {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
 
             address orderBook = HybridLibrary.getOrderBook(factory, path[i], path[i + 1]);
-            uint tradeDirection = HybridLibrary.getTradeDirection(orderBook, path[i - 1]); //方向可能等于0
+            uint tradeDirection = HybridLibrary.getTradeDirection(orderBook, path[i]); //方向可能等于0
             uint orderDirection = ~tradeDirection; // 订单方向与交易方向相反
 
             uint decimal = HybridLibrary.getPriceDecimal(orderBook);
@@ -92,6 +92,7 @@ library UniswapV2Library {
                     amountLeft = amountLeft - amountInUsed;
                 }
                 else { //amountIn消耗完了
+                    amountLeft = 0;
                     break;
                 }
 
@@ -126,7 +127,7 @@ library UniswapV2Library {
         for (uint i = path.length - 1; i > 0; i--) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
 
-            address orderBook = HybridLibrary.getOrderBook(factory, path[i], path[i + 1]);
+            address orderBook = HybridLibrary.getOrderBook(factory, path[i - 1], path[i]);
             uint tradeDirection = HybridLibrary.getTradeDirection(orderBook, path[i - 1]); //方向可能等于0
             uint orderDirection = ~tradeDirection; //1->2 /2->1 /0->0
 
@@ -149,6 +150,7 @@ library UniswapV2Library {
                     amountLeft = amountLeft - amountOutUsed;
                 }
                 else { //amountOut消耗完了
+                    amountLeft = 0;
                     break;
                 }
 

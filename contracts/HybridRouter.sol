@@ -17,7 +17,7 @@ contract HybridRouter is IHybridRouter {
     address public immutable override WETH;
 
     modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'UniswapV2Router: EXPIRED');
+        require(deadline >= block.timestamp, 'HybridRouter: EXPIRED');
         _;
     }
 
@@ -30,7 +30,7 @@ contract HybridRouter is IHybridRouter {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
-    //创建用QuoteToken买BaseToken限价单 (usdc -> uni)
+    //创建用quoteToken买baseToken限价单 (usdc -> uni)
     function buyWithToken(
         uint amountOffer,
         uint price,
@@ -53,7 +53,7 @@ contract HybridRouter is IHybridRouter {
         );
 
         to = to == address(0) ? msg.sender : to;
-        orderId = IOrderBook(orderBook).createBuyLimitOrder(msg.sender, amountOffer, price, to);
+        orderId = IOrderBook(orderBook).createBuyLimitOrder(msg.sender, price, to);
     }
 
     //创建用ETH买BaseToken限价单 (eth -> uni)
@@ -81,7 +81,7 @@ contract HybridRouter is IHybridRouter {
         assert(IWETH(WETH).transfer(orderBook, msg.value));
 
         to = to == address(0) ? msg.sender : to;
-        orderId = IOrderBook(orderBook).createBuyLimitOrder(msg.sender, msg.value, price, to);
+        orderId = IOrderBook(orderBook).createBuyLimitOrder(msg.sender, price, to);
     }
 
     //创建将baseToken卖为quoteToken限价单 (uni -> usdc)
@@ -108,7 +108,7 @@ contract HybridRouter is IHybridRouter {
         );
 
         to = to == address(0) ? msg.sender : to;
-        orderId = IOrderBook(orderBook).createSellLimitOrder(msg.sender, amountOffer, price, to);
+        orderId = IOrderBook(orderBook).createSellLimitOrder(msg.sender, price, to);
     }
 
     //创建将ETH卖为quoteToken限价单 (eth -> usdc)
@@ -136,6 +136,38 @@ contract HybridRouter is IHybridRouter {
         assert(IWETH(WETH).transfer(orderBook, msg.value));
 
         to = to == address(0) ? msg.sender : to;
-        orderId = IOrderBook(orderBook).createSellLimitOrder(msg.sender, msg.value, price, to);
+        orderId = IOrderBook(orderBook).createSellLimitOrder(msg.sender, price, to);
+    }
+
+    //需要考虑初始价格到目标价格之间还有其它挂单的情况，需要考虑最小数量
+    function getAmountsForBuy(uint amountOffer, uint price, address baseToken, address quoteToken)
+    external view
+    returns (uint[] memory amounts) { //返回ammAmountIn, ammAmountOut, orderAmountIn, orderAmountOut
+        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
+        address orderBook = IOrderBookFactory(factory).getOrderBook(baseToken, quoteToken);
+        require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
+        require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
+
+        (uint reserveIn, uint reserveOut) = UniswapV2Library.getReserves(
+            IOrderBookFactory(factory).pairFactory(),
+            quoteToken,
+            baseToken);
+        amounts = HybridLibrary.getAmountsForBuy(orderBook, amountOffer, price, reserveIn, reserveOut);
+    }
+
+    //需要考虑初始价格到目标价格之间还有其它挂单的情况，需要考虑最小数量
+    function getAmountsForSell(uint amountOffer, uint price, address baseToken, address quoteToken)
+    external view
+    returns (uint[] memory amounts) { //返回ammAmountIn, ammAmountOut, orderAmountIn, orderAmountOut
+        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
+        address orderBook = IOrderBookFactory(factory).getOrderBook(baseToken, quoteToken);
+        require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
+        require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
+
+        (uint reserveIn, uint reserveOut) = UniswapV2Library.getReserves(
+            IOrderBookFactory(factory).pairFactory(),
+            baseToken,
+            quoteToken);
+        amounts = HybridLibrary.getAmountsForSell(orderBook, amountOffer, price, reserveIn, reserveOut);
     }
 }

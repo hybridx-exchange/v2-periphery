@@ -11,6 +11,9 @@ import "./UniswapV2Library.sol";
 library HybridLibrary {
     using SafeMath for uint;
 
+    uint internal constant LIMIT_BUY = 1;
+    uint internal constant LIMIT_SELL = 2;
+
     //根据价格计算使用amountIn换出的amountOut的数量
     function getAmountOutWithPrice(uint amountIn, uint price, uint decimal) internal pure returns (uint amountOut){
         amountOut = amountIn.mul(price) / 10 ** decimal;
@@ -67,7 +70,7 @@ library HybridLibrary {
     function getAmountForMovePrice(uint direction, uint reserveIn, uint reserveOut, uint price, uint decimal)
     internal pure returns (uint amountIn, uint amountOut, uint reserveInNew, uint reserveOutNew) {
         (uint baseReserve, uint quoteReserve) = (reserveIn, reserveOut);
-        if (direction == 1) {//buy (quoteToken == tokenA)  用tokenA换tokenB
+        if (direction == LIMIT_BUY) {//buy (quoteToken == tokenA)  用tokenA换tokenB
             (baseReserve, quoteReserve) = (reserveOut, reserveIn);
             //根据p = y + (1-0.3%) * y' / (1-0.3%) * x 推出 997 * y' = (997 * x * p - 1000 * y), 如果等于0表示不需要移动价格
             //先计算997 * x * p
@@ -81,7 +84,7 @@ library HybridLibrary {
             //再更新reserveInNew = reserveIn - x', reserveOutNew = reserveOut + y'
             (reserveInNew, reserveOutNew) = (reserveIn + amountIn, reserveOut - amountOut);
         }
-        else if (direction == 2) {//sell(quoteToken == tokenB) 用tokenA换tokenB
+        else if (direction == LIMIT_SELL) {//sell(quoteToken == tokenB) 用tokenA换tokenB
             //根据p = x + (1-0.3%) * x' / (1-0.3%) * y 推出 997 * x' = (997 * y * p - 1000 * x), 如果等于0表示不需要移动价格
             //先计算 y * p * 997
             uint q1 = getAmountOutWithPrice(quoteReserve.mul(997), price, decimal);
@@ -103,7 +106,7 @@ library HybridLibrary {
     //手续费应该包含在amountOutWithFee中
     function getAmountOutForTakePrice(uint direction, uint amountInOffer, uint price, uint decimal, uint orderAmount)
     internal pure returns (uint amountIn, uint amountOutWithFee) {
-        if (direction == 1) { //buy (quoteToken == tokenIn)  用tokenIn（usdc)换tokenOut(btc)
+        if (direction == LIMIT_BUY) { //buy (quoteToken == tokenIn)  用tokenIn（usdc)换tokenOut(btc)
             //amountOut = amountInOffer / price
             uint amountOut = getAmountOutWithPrice(amountInOffer, price, decimal);
             if (amountOut.mul(1000) <= orderAmount.mul(997)) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
@@ -116,7 +119,7 @@ library HybridLibrary {
                 orderAmount);
             }
         }
-        else if (direction == 2) { //sell (quoteToken == tokenOut) 用tokenIn(btc)换tokenOut(usdc)
+        else if (direction == LIMIT_SELL) { //sell (quoteToken == tokenOut) 用tokenIn(btc)换tokenOut(usdc)
             //amountOut = amountInOffer * price
             uint amountOut = getAmountInWithPrice(amountInOffer, price, decimal);
             if (amountOut.mul(1000) <= orderAmount.mul(997)) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
@@ -134,7 +137,7 @@ library HybridLibrary {
     //期望获得amountOutExpect，需要投入多少amountIn
     function getAmountInForTakePrice(uint direction, uint amountOutExpect, uint price, uint decimal, uint orderAmount)
     internal pure returns (uint amountIn, uint amountOutWithFee) {
-        if (direction == 1) { //buy (quoteToken == tokenIn)  用tokenIn（usdc)换tokenOut(btc)
+        if (direction == LIMIT_BUY) { //buy (quoteToken == tokenIn)  用tokenIn（usdc)换tokenOut(btc)
             uint amountOut = amountOutExpect.mul(997) / 1000;
             if (amountOut <= orderAmount) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
                 (amountIn, amountOutWithFee) = (getAmountOutWithPrice(amountOut, price, decimal), amountOutExpect);
@@ -146,7 +149,7 @@ library HybridLibrary {
                 orderAmount);
             }
         }
-        else if (direction == 2) { //sell (quoteToken == tokenOut) 用tokenIn(btc)换tokenOut(usdc)
+        else if (direction == LIMIT_SELL) { //sell (quoteToken == tokenOut) 用tokenIn(btc)换tokenOut(usdc)
             uint amountOut = amountOutExpect.mul(997) / 1000;
             if (amountOut <= orderAmount) { //只吃掉一部分: amountOut > amountOffer * (1-0.3%)
                 (amountIn, amountOutWithFee) = (getAmountInWithPrice(amountOut, price, decimal), amountOutExpect);
@@ -194,6 +197,7 @@ library HybridLibrary {
                 amountLeft = amountLeft - amountInUsed;
             }
             else { //amountIn消耗完了
+                amountLeft = 0;
                 break;
             }
 
@@ -228,28 +232,16 @@ library HybridLibrary {
     }
 
     //需要考虑初始价格到目标价格之间还有其它挂单的情况，需要考虑最小数量
-    function getAmountsForBuy(address factory, uint amountOffer, uint price, address baseToken, address quoteToken)
+    function getAmountsForBuy(address orderBook, uint amountOffer, uint price, uint reserveIn, uint reserveOut)
     external view
     returns (uint[] memory amounts) { //返回ammAmountIn, ammAmountOut, orderAmountIn, orderAmountOut
-        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
-        address orderBook = getOrderBook(factory, baseToken, quoteToken);
-        require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
-        require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
-
-        (uint reserveIn, uint reserveOut) = UniswapV2Library.getReserves(factory, baseToken, quoteToken);
-        amounts = getAmountsForLimitOrder(orderBook, 1, amountOffer, price, reserveIn, reserveOut);
+        amounts = getAmountsForLimitOrder(orderBook, LIMIT_BUY, amountOffer, price, reserveIn, reserveOut);
     }
 
     //需要考虑初始价格到目标价格之间还有其它挂单的情况，需要考虑最小数量
-    function getAmountsForSell(address factory, uint amountOffer, uint price, address baseToken, address quoteToken)
+    function getAmountsForSell(address orderBook, uint amountOffer, uint price, uint reserveIn, uint reserveOut)
     external view
     returns (uint[] memory amounts) { //返回ammAmountIn, ammAmountOut, orderAmountIn, orderAmountOut
-        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
-        address orderBook = getOrderBook(factory, baseToken, quoteToken);
-        require(orderBook != address(0), 'HybridRouter: Invalid_OrderBook');
-        require(baseToken == IOrderBook(orderBook).baseToken(), 'HybridRouter: MisOrder_Path');
-
-        (uint reserveIn, uint reserveOut) = UniswapV2Library.getReserves(factory, baseToken, quoteToken);
-        amounts = getAmountsForLimitOrder(orderBook, 2, amountOffer, price, reserveIn, reserveOut);
+        amounts = getAmountsForLimitOrder(orderBook, LIMIT_SELL, amountOffer, price, reserveIn, reserveOut);
     }
 }
