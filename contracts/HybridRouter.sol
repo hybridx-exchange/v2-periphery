@@ -16,6 +16,9 @@ contract HybridRouter is IHybridRouter {
     address public immutable override factory;
     address public immutable override WETH;
 
+    uint internal constant LIMIT_BUY = 1;
+    uint internal constant LIMIT_SELL = 2;
+
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'HybridRouter: EXPIRED');
         _;
@@ -169,5 +172,20 @@ contract HybridRouter is IHybridRouter {
             baseToken,
             quoteToken);
         amounts = HybridLibrary.getAmountsForSell(orderBook, amountOffer, price, reserveIn, reserveOut);
+    }
+
+    //获取订单薄
+    function getOrderBook(address baseToken, address quoteToken, uint32 limitSize)
+    external view
+    returns
+    (uint price, uint[] memory buyPrices, uint[] memory buyAmounts, uint[] memory sellPrices, uint[] memory sellAmounts)
+    {
+        require(baseToken != quoteToken, 'HybridRouter: Invalid_Path');
+        address orderBook = IOrderBookFactory(factory).getOrderBook(baseToken, quoteToken);
+        if (orderBook != address(0)) {
+            price = IOrderBook(orderBook).getPrice();
+            (buyPrices, buyAmounts) = IOrderBook(orderBook).marketBook(LIMIT_BUY, limitSize);
+            (sellPrices, sellAmounts) = IOrderBook(orderBook).marketBook(LIMIT_SELL, limitSize);
+        }
     }
 }
