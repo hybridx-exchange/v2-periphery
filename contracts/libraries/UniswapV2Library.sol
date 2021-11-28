@@ -1,11 +1,10 @@
 pragma solidity >=0.5.0;
 
 import "../interfaces/IOrderBook.sol";
+import "../interfaces/IOrderBookFactory.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 import "../interfaces/IUniswapV2Factory.sol";
 import "./SafeMath.sol";
-
-import "./HybridLibrary.sol";
 
 library UniswapV2Library {
     using SafeMath for uint;
@@ -61,6 +60,13 @@ library UniswapV2Library {
         amountIn = (numerator / denominator).add(1);
     }
 
+    function getOrderBook(address factory, address tokenA, address tokenB) internal view returns (address orderBook) {
+        address orderBookFactory = IUniswapV2Factory(factory).getOrderBookFactory();
+        if (orderBookFactory != address(0)){
+            return IOrderBookFactory(orderBookFactory).getOrderBook(tokenA, tokenB);
+        }
+    }
+
     // performs chained getAmountOut calculations on any number of pairs
     function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
@@ -68,54 +74,16 @@ library UniswapV2Library {
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-
-            address orderBook = HybridLibrary.getOrderBook(factory, path[i], path[i + 1]);
-            uint tradeDirection = HybridLibrary.getTradeDirection(orderBook, path[i]); //方向可能等于0
-            uint orderDirection = ~tradeDirection; // 订单方向与交易方向相反
-
-            uint decimal = HybridLibrary.getPriceDecimal(orderBook);
-            uint amountLeft = amounts[i];
-            uint amountOut = 0;
-            (uint price, uint amount) = HybridLibrary.getNextBook(orderBook, orderDirection, 0);
-            while (price != 0) {
-                uint amountInUsed;
-                uint amountOutUsed;
-                //先计算pair从当前价格到price消耗amountIn的数量
-                (amountInUsed, amountOutUsed, reserveIn, reserveOut) = HybridLibrary.getAmountForMovePrice(
-                    tradeDirection, reserveIn, reserveOut, price, decimal);
-                //再计算本次移动价格获得的amountOut
-                amountOutUsed = amountInUsed > amountLeft ? getAmountOut(amountLeft, reserveIn,
-                    reserveOut) : amountOutUsed;
-                amountOut += amountOutUsed;
-                //再计算还剩下的amountIn
-                if (amountLeft > amountInUsed) {
-                    amountLeft = amountLeft - amountInUsed;
-                }
-                else { //amountIn消耗完了
-                    amountLeft = 0;
-                    break;
-                }
-
-                //计算消耗掉一个价格的挂单需要的amountIn数量
-                (uint amountInForTake, uint amountOutWithFee) = HybridLibrary.getAmountOutForTakePrice(
-                    orderDirection, amountLeft, price, decimal, amount);
-                amountOut += amountOutWithFee;
-                if (amountLeft > amountInForTake) {
-                    amountLeft = amountLeft - amountInForTake;
-                }
-                else{
-                    amountLeft = 0;
-                    break;
-                }
-
-                (price, amount) = HybridLibrary.getNextBook(orderBook, orderDirection, price);
+            address orderBook = getOrderBook(factory, path[i], path[i + 1]);
+            uint amountInLeft = amounts[i];
+            uint amountOutGet;
+            if (orderBook != address(0)) {
+                (amountOutGet, amountInLeft, reserveIn, reserveOut) =
+                    IOrderBook(orderBook).getAmountOutForMovePrice(amountInLeft, reserveIn, reserveOut);
             }
 
-            if (amountLeft > 0) {
-                amountOut += getAmountOut(amountLeft, reserveIn, reserveOut);
-            }
-
-            amounts[i + 1] = amountOut;
+            amounts[i + 1] = amountInLeft > 0 ?
+                getAmountOut(amountInLeft, reserveIn, reserveOut) + amountOutGet : amountOutGet;
         }
     }
 
@@ -126,52 +94,16 @@ library UniswapV2Library {
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
-
-            address orderBook = HybridLibrary.getOrderBook(factory, path[i - 1], path[i]);
-            uint tradeDirection = HybridLibrary.getTradeDirection(orderBook, path[i - 1]); //方向可能等于0
-            uint orderDirection = ~tradeDirection; //1->2 /2->1 /0->0
-
-            uint decimal = HybridLibrary.getPriceDecimal(orderBook);
-            //先计算从当前价格到price[i]消耗的数量
-            uint amountLeft = amounts[i];
-            uint amountIn = 0;
-            (uint price, uint amount) = HybridLibrary.getNextBook(orderBook, orderDirection, 0);
-            while (price != 0) {
-                uint amountInUsed;
-                uint amountOutUsed;
-                //先计算pair从当前价格到price消耗amountIn的数量
-                (amountInUsed, amountOutUsed, reserveIn, reserveOut) = HybridLibrary.getAmountForMovePrice(
-                    tradeDirection, reserveIn, reserveOut, price, decimal);
-                //再计算本次移动价格获得的amountOut
-                amountInUsed = amountInUsed > amountLeft ? amountLeft : amountInUsed;
-                amountIn += amountInUsed;
-                //再计算还剩下的amountIn
-                if (amountLeft > amountOutUsed) {
-                    amountLeft = amountLeft - amountOutUsed;
-                }
-                else { //amountOut消耗完了
-                    amountLeft = 0;
-                    break;
-                }
-
-                //计算消耗掉一个价格的挂单需要的amountOut数量
-                (uint amountInForTake, uint amountOutWithFee) = HybridLibrary.getAmountInForTakePrice(orderDirection,
-                    amountLeft, price, decimal, amount);
-                amountIn += amountInForTake;
-                if (amountLeft > amountOutWithFee) {
-                    amountLeft = amountLeft - amountOutWithFee;
-                }
-                else {
-                    amountLeft = 0;
-                    break;
-                }
+            address orderBook = getOrderBook(factory, path[i - 1], path[i]);
+            uint amountOutLeft = amounts[i];
+            uint amountInGet;
+            if (orderBook != address(0)) {
+                (amountInGet, amountOutLeft, reserveIn, reserveOut) =
+                    IOrderBook(orderBook).getAmountInForMovePrice(amountOutLeft, reserveIn, reserveOut);
             }
 
-            if (amountLeft > 0) {
-                amountIn += getAmountIn(amountLeft, reserveIn, reserveOut);
-            }
-
-            amounts[i - 1] = amountIn;
+            amounts[i - 1] = amountOutLeft > 0 ?
+                getAmountIn(amountOutLeft, reserveIn, reserveOut) + amountInGet : amountInGet;
         }
     }
 }
