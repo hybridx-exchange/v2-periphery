@@ -79,7 +79,7 @@ library UniswapV2Library {
             uint amountOutGet;
             if (orderBook != address(0)) {
                 (amountOutGet, amountInLeft, reserveIn, reserveOut) =
-                    IOrderBook(orderBook).getAmountOutForMovePrice(amountInLeft, reserveIn, reserveOut);
+                    IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amountInLeft, reserveIn, reserveOut);
             }
 
             amounts[i + 1] = amountInLeft > 0 ?
@@ -99,7 +99,7 @@ library UniswapV2Library {
             uint amountInGet;
             if (orderBook != address(0)) {
                 (amountInGet, amountOutLeft, reserveIn, reserveOut) =
-                    IOrderBook(orderBook).getAmountInForMovePrice(amountOutLeft, reserveIn, reserveOut);
+                    IOrderBook(orderBook).getAmountInForMovePrice(path[i], amountOutLeft, reserveIn, reserveOut);
             }
 
             amounts[i - 1] = amountOutLeft > 0 ?
