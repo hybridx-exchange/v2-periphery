@@ -7,7 +7,7 @@ import { expandTo18Decimals } from './utilities'
 import UniswapV2Factory from '@hybridx-exchange/v2-core/build/UniswapV2Factory.json'
 import IUniswapV2Pair from '@hybridx-exchange/v2-core/build/IUniswapV2Pair.json'
 
-import ERC20 from '@hybridx-exchange/v2-core/build/ERC20.json'
+import ERC20 from '../../build/ERC20.json'
 import WETH9 from '../../build/WETH9.json'
 import UniswapV2Router01 from '../../build/UniswapV2Router01.json'
 import UniswapV2Router02 from '../../build/UniswapV2Router02.json'
@@ -32,21 +32,29 @@ interface V2Fixture {
 }
 
 export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<V2Fixture> {
+  console.log("deploy tokens")
+  console.log("deploy token WETH")
+  const WETH = await deployContract(wallet, WETH9, [], overrides)
   // deploy tokens
-  const tokenA = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)])
-  const tokenB = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)])
-  const WETH = await deployContract(wallet, WETH9)
-  const WETHPartner = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)])
+  console.log("deploy token A")
+  const tokenA = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
+  console.log("deploy token B")
+  const tokenB = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
+  console.log("deploy token WETHPartner")
+  const WETHPartner = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
 
+  console.log("deploy factoryV2")
   // deploy V2
-  const factoryV2 = await deployContract(wallet, UniswapV2Factory, [wallet.address])
+  const factoryV2 = await deployContract(wallet, UniswapV2Factory, [wallet.address], overrides)
 
+  console.log("deploy routers")
   // deploy routers
   const router01 = await deployContract(wallet, UniswapV2Router01, [factoryV2.address, WETH.address], overrides)
   const router02 = await deployContract(wallet, UniswapV2Router02, [factoryV2.address, WETH.address], overrides)
 
+  console.log("event emitter for testing")
   // event emitter for testing
-  const routerEventEmitter = await deployContract(wallet, RouterEventEmitter, [])
+  const routerEventEmitter = await deployContract(wallet, RouterEventEmitter, [], overrides)
 
   // initialize V2
   await factoryV2.createPair(tokenA.address, tokenB.address)
@@ -60,11 +68,6 @@ export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Pro
   await factoryV2.createPair(WETH.address, WETHPartner.address)
   const WETHPairAddress = await factoryV2.getPair(WETH.address, WETHPartner.address)
   const WETHPair = new Contract(WETHPairAddress, JSON.stringify(IUniswapV2Pair.abi), provider).connect(wallet)
-
-  await token0.transfer(pair.address, expandTo18Decimals(10))
-  await token1.transfer(pair.address, expandTo18Decimals(1000))
-  await pair.mint(wallet.address, overrides)
-  console.log(await pair.totalSupply())
 
   return {
     token0,

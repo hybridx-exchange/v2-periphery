@@ -35,10 +35,10 @@
   resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.0.4.tgz#24900243caae48cd97022d507430b684d96af325"
   integrity sha512-ftcJFRWjyYZQYjhxFNqjF39tCiioIw/BWCAezNp09SNRNmMhYLr6Tor7CnsaFG+yBTvrmmIAJ84vcvJNikL7kg==
 
-"@hybridx-exchange/v2-core@0.0.1":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.0.1.tgz#2ce9934c1e2bbe60d3d2bc751580bcf07718d220"
-  integrity sha512-OCyRWYViT/hk12GIN3KD8ASggjoioe5IF10hqPjE9rETacCG+nEgpO3B4c6jQGLvBuEDaG3QRpa3pTyqO9bnyQ==
+"@hybridx-exchange/v2-core@0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.0.2.tgz#68e8d42a237c3487c19493ee508e02b2c8a14738"
+  integrity sha512-KCtfrq6+33+wk8AAXUmOEvNpA5nptB8KlwyNYiSJkZf9wwRIdZl3oP3jec5N8Yaf2f7uOOUHP0YViH4rGHATlg==
 
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
