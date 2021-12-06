@@ -61,6 +61,11 @@ export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Pro
   const WETHPairAddress = await factoryV2.getPair(WETH.address, WETHPartner.address)
   const WETHPair = new Contract(WETHPairAddress, JSON.stringify(IUniswapV2Pair.abi), provider).connect(wallet)
 
+  await token0.transfer(pair.address, expandTo18Decimals(10))
+  await token1.transfer(pair.address, expandTo18Decimals(1000))
+  await pair.mint(wallet.address, overrides)
+  console.log(await pair.totalSupply())
+
   return {
     token0,
     token1,
