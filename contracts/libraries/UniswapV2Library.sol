@@ -75,16 +75,7 @@ library UniswapV2Library {
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-            address orderBook = getOrderBook(factory, path[i], path[i + 1]);
-            uint amountInLeft = amounts[i];
-            uint amountOutGet;
-            if (orderBook != address(0)) {
-                (amountOutGet, amountInLeft, reserveIn, reserveOut) =
-                    IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amountInLeft, reserveIn, reserveOut);
-            }
-
-            amounts[i + 1] = amountInLeft > 0 ?
-                getAmountOut(amountInLeft, reserveIn, reserveOut) + amountOutGet : amountOutGet;
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
         }
     }
 
