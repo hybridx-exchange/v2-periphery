@@ -1,9 +1,9 @@
 pragma solidity >=0.5.0;
 
-import "../interfaces/IOrderBook.sol";
-import "../interfaces/IOrderBookFactory.sol";
-import "../interfaces/IUniswapV2Pair.sol";
-import "../interfaces/IUniswapV2Factory.sol";
+import "@hybridx-exchange/orderbook-core/contracts/interfaces/IOrderBook.sol";
+import "@hybridx-exchange/orderbook-core/contracts/interfaces/IOrderBookFactory.sol";
+import "@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import "@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "./SafeMath.sol";
 
 library UniswapV2Library {

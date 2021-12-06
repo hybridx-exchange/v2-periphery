@@ -3,8 +3,8 @@ pragma solidity >=0.5.0;
 import '@uniswap/lib/contracts/libraries/Babylonian.sol';
 import '@uniswap/lib/contracts/libraries/FullMath.sol';
 
-import '../interfaces/IUniswapV2Pair.sol';
-import '../interfaces/IUniswapV2Factory.sol';
+import '@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
+import '@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
 import './SafeMath.sol';
 import './UniswapV2Library.sol';
 

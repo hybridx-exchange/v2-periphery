@@ -30,6 +30,11 @@
     ethers "^4.0.45"
     ganache-core "^2.10.2"
 
+"@hybridx-exchange/orderbook-core@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.0.4.tgz#24900243caae48cd97022d507430b684d96af325"
+  integrity sha512-ftcJFRWjyYZQYjhxFNqjF39tCiioIw/BWCAezNp09SNRNmMhYLr6Tor7CnsaFG+yBTvrmmIAJ84vcvJNikL7kg==
+
 "@hybridx-exchange/v2-core@0.0.1":
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.0.1.tgz#2ce9934c1e2bbe60d3d2bc751580bcf07718d220"

@@ -7,7 +7,7 @@ import { expandTo18Decimals } from './utilities'
 import UniswapV2Factory from '@hybridx-exchange/v2-core/build/UniswapV2Factory.json'
 import IUniswapV2Pair from '@hybridx-exchange/v2-core/build/IUniswapV2Pair.json'
 
-import ERC20 from '../../build/ERC20.json'
+import ERC20 from '@hybridx-exchange/v2-core/build/ERC20.json'
 import WETH9 from '../../build/WETH9.json'
 import UniswapV2Router01 from '../../build/UniswapV2Router01.json'
 import UniswapV2Router02 from '../../build/UniswapV2Router02.json'

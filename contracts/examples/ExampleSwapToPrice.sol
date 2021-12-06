@@ -3,9 +3,9 @@ pragma solidity =0.6.6;
 import '@uniswap/lib/contracts/libraries/Babylonian.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
-import '../interfaces/IUniswapV2Pair.sol';
+import '@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 import '../libraries/UniswapV2LiquidityMathLibrary.sol';
-import '../interfaces/IERC20.sol';
+import '@hybridx-exchange/v2-core/contracts/interfaces/IERC20.sol';
 import '../interfaces/IUniswapV2Router01.sol';
 import '../libraries/SafeMath.sol';
 import '../libraries/UniswapV2Library.sol';
