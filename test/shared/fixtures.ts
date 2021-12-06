@@ -14,7 +14,7 @@ import UniswapV2Router02 from '../../build/UniswapV2Router02.json'
 import RouterEventEmitter from '../../build/RouterEventEmitter.json'
 
 const overrides = {
-  gasLimit: 9999999
+  gasLimit: 99999999
 }
 
 interface V2Fixture {

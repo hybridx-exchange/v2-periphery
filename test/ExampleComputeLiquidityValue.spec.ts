@@ -11,14 +11,14 @@ import ExampleComputeLiquidityValue from '../build/ExampleComputeLiquidityValue.
 chai.use(solidity)
 
 const overrides = {
-  gasLimit: 9999999
+  gasLimit: 99999999
 }
 
 describe('ExampleComputeLiquidityValue', () => {
   const provider = new MockProvider({
     hardfork: 'istanbul',
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-    gasLimit: 9999999
+    gasLimit: 99999999
   })
   const [wallet] = provider.getWallets()
   const loadFixture = createFixtureLoader(provider, [wallet])
