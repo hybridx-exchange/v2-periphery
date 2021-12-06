@@ -68,7 +68,16 @@ library UniswapV2Library {
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+            address orderBook = getOrderBook(factory, path[i], path[i + 1]);
+            uint amountInLeft = amounts[i];
+            uint amountOutGet;
+            if (orderBook != address(0)) {
+                (amountOutGet, amountInLeft, reserveIn, reserveOut) =
+                    IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amountInLeft, reserveIn, reserveOut);
+            }
+
+            amounts[i + 1] = amountInLeft > 0 ?
+                getAmountOut(amountInLeft, reserveIn, reserveOut) + amountOutGet : amountOutGet;
         }
     }
 
@@ -79,7 +88,16 @@ library UniswapV2Library {
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+            address orderBook = getOrderBook(factory, path[i - 1], path[i]);
+            uint amountOutLeft = amounts[i];
+            uint amountInGet;
+            if (orderBook != address(0)) {
+                (amountInGet, amountOutLeft, reserveIn, reserveOut) =
+                    IOrderBook(orderBook).getAmountInForMovePrice(path[i], amountOutLeft, reserveIn, reserveOut);
+            }
+
+            amounts[i - 1] = amountOutLeft > 0 ?
+                getAmountIn(amountOutLeft, reserveIn, reserveOut) + amountInGet : amountInGet;
         }
     }
 }
