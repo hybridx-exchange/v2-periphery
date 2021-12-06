@@ -1,9 +1,9 @@
 pragma solidity =0.6.6;
 
+import './interfaces/IUniswapV2Factory.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
 import './interfaces/IUniswapV2Router02.sol';
-import './interfaces/IUniswapV2Factory.sol';
 import './libraries/UniswapV2Library.sol';
 import './libraries/SafeMath.sol';
 import './interfaces/IERC20.sol';

@@ -1,7 +1,11 @@
 pragma solidity >=0.5.0;
 
+import '../interfaces/IUniswapV2Factory.sol';
+import '../interfaces/IOrderBook.sol';
+import '../interfaces/IOrderBookFactory.sol';
 import '../interfaces/IUniswapV2Pair.sol';
-import "./SafeMath.sol";
+
+import './SafeMath.sol';
 
 library UniswapV2Library {
     using SafeMath for uint;
@@ -57,6 +61,13 @@ library UniswapV2Library {
         amountIn = (numerator / denominator).add(1);
     }
 
+    function getOrderBook(address factory, address tokenA, address tokenB) internal view returns (address orderBook) {
+        address orderBookFactory = IUniswapV2Factory(factory).getOrderBookFactory();
+        if (orderBookFactory != address(0)){
+            return IOrderBookFactory(orderBookFactory).getOrderBook(tokenA, tokenB);
+        }
+    }
+
     // performs chained getAmountOut calculations on any number of pairs
     function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
@@ -64,7 +75,16 @@ library UniswapV2Library {
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+            address orderBook = getOrderBook(factory, path[i], path[i + 1]);
+            uint amountInLeft = amounts[i];
+            uint amountOutGet;
+            if (orderBook != address(0)) {
+                (amountOutGet, amountInLeft, reserveIn, reserveOut) =
+                    IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amountInLeft, reserveIn, reserveOut);
+            }
+
+            amounts[i + 1] = amountInLeft > 0 ?
+                getAmountOut(amountInLeft, reserveIn, reserveOut) + amountOutGet : amountOutGet;
         }
     }
 
