@@ -32,27 +32,19 @@ interface V2Fixture {
 }
 
 export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<V2Fixture> {
-  console.log("deploy tokens")
-  console.log("deploy token WETH")
   const WETH = await deployContract(wallet, WETH9, [], overrides)
   // deploy tokens
-  console.log("deploy token A")
   const tokenA = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
-  console.log("deploy token B")
   const tokenB = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
-  console.log("deploy token WETHPartner")
   const WETHPartner = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
 
-  console.log("deploy factoryV2")
   // deploy V2
   const factoryV2 = await deployContract(wallet, UniswapV2Factory, [wallet.address], overrides)
 
-  console.log("deploy routers")
   // deploy routers
   const router01 = await deployContract(wallet, UniswapV2Router01, [factoryV2.address, WETH.address], overrides)
   const router02 = await deployContract(wallet, UniswapV2Router02, [factoryV2.address, WETH.address], overrides)
 
-  console.log("event emitter for testing")
   // event emitter for testing
   const routerEventEmitter = await deployContract(wallet, RouterEventEmitter, [], overrides)
 

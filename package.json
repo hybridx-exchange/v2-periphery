@@ -30,7 +30,7 @@
     "solc": "0.6.6",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.3",
-    "@hybridx-exchange/v2-core": "0.0.2",
+    "@hybridx-exchange/v2-core": "0.0.3",
     "@hybridx-exchange/orderbook-core": "0.0.4"
   },
   "scripts": {
