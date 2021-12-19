@@ -72,6 +72,7 @@ library UniswapV2Library {
             uint amountInLeft = amounts[i];
             uint amountOutGet;
             if (orderBook != address(0)) {
+                //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
                 (amountOutGet, amountInLeft, reserveIn, reserveOut) =
                     IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amountInLeft, reserveIn, reserveOut);
             }
@@ -92,6 +93,7 @@ library UniswapV2Library {
             uint amountOutLeft = amounts[i];
             uint amountInGet;
             if (orderBook != address(0)) {
+                //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
                 (amountInGet, amountOutLeft, reserveIn, reserveOut) =
                     IOrderBook(orderBook).getAmountInForMovePrice(path[i], amountOutLeft, reserveIn, reserveOut);
             }

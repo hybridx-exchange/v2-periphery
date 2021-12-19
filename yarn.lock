@@ -30,15 +30,15 @@
     ethers "^4.0.45"
     ganache-core "^2.10.2"
 
-"@hybridx-exchange/orderbook-core@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.0.4.tgz#24900243caae48cd97022d507430b684d96af325"
-  integrity sha512-ftcJFRWjyYZQYjhxFNqjF39tCiioIw/BWCAezNp09SNRNmMhYLr6Tor7CnsaFG+yBTvrmmIAJ84vcvJNikL7kg==
+"@hybridx-exchange/orderbook-core@0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.1.2.tgz#28edfe784f99e47c69d9ea727ecdbac3238b2c61"
+  integrity sha512-bs8kKF9LKUBWQECJsqGROIJQZeu0YDCF/BZKtbVF99JsLDExdQ0aJ4UPSY3NNkU3lNx6VwKqIDsmrkR4XiQDCA==
 
-"@hybridx-exchange/v2-core@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.0.2.tgz#68e8d42a237c3487c19493ee508e02b2c8a14738"
-  integrity sha512-KCtfrq6+33+wk8AAXUmOEvNpA5nptB8KlwyNYiSJkZf9wwRIdZl3oP3jec5N8Yaf2f7uOOUHP0YViH4rGHATlg==
+"@hybridx-exchange/v2-core@0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.1.2.tgz#8438124a01761c72ede444c7605ba0f2816b5add"
+  integrity sha512-Tw36zfl6I6xbUp1BBrTxF3wLV0KbVozUSOPxGWke4ijwPSDyM5xljbCm65ojuUl2zuwpQI5XDxPaClZZHRJ08A==
 
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"

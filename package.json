@@ -30,8 +30,8 @@
     "solc": "0.6.6",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.3",
-    "@hybridx-exchange/v2-core": "0.1.0",
-    "@hybridx-exchange/orderbook-core": "0.1.0"
+    "@hybridx-exchange/v2-core": "0.1.2",
+    "@hybridx-exchange/orderbook-core": "0.1.2"
   },
   "scripts": {
     "lint": "yarn prettier ./test/*.ts --check",
