@@ -21,10 +21,10 @@ contract ERC20 {
     event Transfer(address indexed from, address indexed to, uint value);
 
     constructor(uint _totalSupply) public {
-        uint chainId=1;
-        //assembly {
-            //chainId := chainid()
-        //}
+        uint chainId;
+        assembly {
+            chainId := chainid()
+        }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
