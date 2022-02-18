@@ -29,11 +29,15 @@ describe('UniswapV2Router02', () => {
   let token0: Contract
   let token1: Contract
   let router: Contract
+  let orderBookFactory: Contract
+  let orderBookRouter: Contract
   beforeEach(async function() {
     const fixture = await loadFixture(v2OrderBookFixture)
     token0 = fixture.token0
     token1 = fixture.token1
     router = fixture.router02
+    orderBookFactory = fixture.orderBookFactory
+    orderBookRouter = fixture.orderBookRouter
   })
 
   it('quote', async () => {
@@ -112,6 +116,8 @@ describe('UniswapV2Router02', () => {
       MaxUint256,
       overrides
     )
+
+    await orderBookFactory.createOrderBook()
 
     await expect(router.getAmountsIn(bigNumberify(1), [token0.address])).to.be.revertedWith(
       'UniswapV2Library: INVALID_PATH'
