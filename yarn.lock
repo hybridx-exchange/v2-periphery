@@ -215,22 +215,22 @@
     "@ethersproject/properties" "^5.5.0"
     "@ethersproject/strings" "^5.5.0"
 
-"@hybridx-exchange/orderbook-core@0.1.46":
-  version "0.1.46"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.1.46.tgz#dbc7565c2ab787087dc5d9999bf4e4f9cda3bf6c"
-  integrity sha512-/c52IjWXnWPuvOadgsJ1Gzm3mCUiNT5dxPPkSNf+zPs1FyPuISqe075ErLl9ySWUJgpsrvqBmprrrB2VszloUQ==
+"@hybridx-exchange/orderbook-core@0.1.47":
+  version "0.1.47"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.1.47.tgz#d7ecefa3e6e6744f035222915e2829480d728973"
+  integrity sha512-2QnnfDQjdbfJ9GHuFAftJBY3KsD67ScXstFFnoC7zgUtMsTp9zhVt5uU5KLMScFCeUBeog46NOuvLtcs3BwLlw==
 
-"@hybridx-exchange/orderbook-periphery@0.0.15":
-  version "0.0.15"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-periphery/-/orderbook-periphery-0.0.15.tgz#bfd3a385d9da12ecd75f02f6a0839454a938d8af"
-  integrity sha512-/D26UXJz+46+zo3BMTO/9m2Zw+PoEKPDUwgoMl//VpdX8BCcSldewGlpsujiqi8Y0cMNu4nWxVDC1i8J16+DJg==
+"@hybridx-exchange/orderbook-periphery@0.0.16":
+  version "0.0.16"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-periphery/-/orderbook-periphery-0.0.16.tgz#65dc9755280b13c83f4eba7590451462faa72282"
+  integrity sha512-kzLFW8Ay8y+f2taNGd8ewP+D0Z7M8iDtttc1Cwnr4z4Q8AKpNXUSZJk0dU7XUaXENXzcQ6giImB+qjc41kAU/g==
   dependencies:
     "@uniswap/lib" "4.0.1-alpha"
 
-"@hybridx-exchange/v2-core@0.1.9":
-  version "0.1.9"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.1.9.tgz#495a54ec665f7f50461f499cdf49bef3553d51e2"
-  integrity sha512-wa7+NSDirvQo86AoNO+2BUuhbeWYqHjRqrPgit3tHCdOSwc1EwihH/yBom6QAcn5qETTIszY/PMer3KZ+Ki4wA==
+"@hybridx-exchange/v2-core@0.1.10":
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.1.10.tgz#83c06b4168240c1214d867071f83e0a33f40b8bb"
+  integrity sha512-xXFGeCDcgr4peon352X+4taHHRCD+IC5m7FLi7PTNPLle5qjIY98UJWJJLws38OSS1FFVoAwiu29Lq6mMQktZg==
 
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
