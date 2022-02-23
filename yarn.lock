@@ -215,15 +215,15 @@
     "@ethersproject/properties" "^5.5.0"
     "@ethersproject/strings" "^5.5.0"
 
-"@hybridx-exchange/orderbook-core@0.1.43":
-  version "0.1.43"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.1.43.tgz#ca7f390783029cefcd95b1421bd7dd034baebbbb"
-  integrity sha512-MXbo1OIDFSUREIONzCl91X6NlkF7AZLpHqzOKhp8G2Sg1whndg0RPg2C8Q+m3bukkjCIQuwAm2/CW6cw+nxv9Q==
+"@hybridx-exchange/orderbook-core@0.1.44":
+  version "0.1.44"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.1.44.tgz#6b94fd6610a4368dc047fd1f689ba8317cabfcbf"
+  integrity sha512-naLPHFIr4vZSzNmsgUZQalmTJroE00dW8PdFA6GyUileq0yUc7ig8sqwPuh9RImCLNkVU9WWx9kr36M2rg8uHg==
 
-"@hybridx-exchange/orderbook-periphery@0.0.12":
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-periphery/-/orderbook-periphery-0.0.12.tgz#359a1e568ccc2735d4cd82151966a67fbfe4f3cd"
-  integrity sha512-2ebpnzRjPnmBgJjyA0BSP7EgZvTkgPJhNkLrJtf4EWl8x001lt5qpRm9qf2e7UL4eeuG4xDzRFLKK2OBW/8J2Q==
+"@hybridx-exchange/orderbook-periphery@0.0.13":
+  version "0.0.13"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-periphery/-/orderbook-periphery-0.0.13.tgz#91ad3f0f4e4945d286c9d2aee3247d5508cc3ae9"
+  integrity sha512-U/DEzHR2hIgy5PRqdTXx7fRXEFJKy8b9EFnThYILjED1Ni019CmTDOrpDHuji4T4SglX6pKBfcJbJ2Cjf7hvpw==
   dependencies:
     "@uniswap/lib" "4.0.1-alpha"
 
