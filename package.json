@@ -1,6 +1,6 @@
 {
   "name": "@hybridx-exchange/v2-periphery",
-  "version": "0.1.16",
+  "version": "v1.0.0",
   "description": "🎚 Peripheral smart contracts for interacting with Hybridx Exchange",
   "engines": {
     "node": ">=10"
@@ -30,9 +30,9 @@
     "solc": "0.6.6",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.3",
-    "@hybridx-exchange/v2-core": "0.1.10",
-    "@hybridx-exchange/orderbook-core": "0.1.47",
-    "@hybridx-exchange/orderbook-periphery": "0.0.16"
+    "@hybridx-exchange/v2-core": "v1.0.0",
+    "@hybridx-exchange/orderbook-core": "v1.0.0",
+    "@hybridx-exchange/orderbook-periphery": "v1.0.0"
   },
   "scripts": {
     "lint": "yarn prettier ./test/*.ts --check",
