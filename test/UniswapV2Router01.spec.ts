@@ -11,7 +11,7 @@ import { v2Fixture } from './shared/fixtures'
 chai.use(solidity)
 
 const overrides = {
-  gasLimit: 9999999
+  gasLimit: 99999999
 }
 
 enum RouterVersion {
@@ -24,7 +24,7 @@ describe('UniswapV2Router{01,02}', () => {
     const provider = new MockProvider({
       hardfork: 'istanbul',
       mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-      gasLimit: 9999999
+      gasLimit: 99999999
     })
     const [wallet] = provider.getWallets()
     const loadFixture = createFixtureLoader(provider, [wallet])
@@ -368,8 +368,8 @@ describe('UniswapV2Router{01,02}', () => {
           const receipt = await tx.wait()
           expect(receipt.gasUsed).to.eq(
             {
-              [RouterVersion.UniswapV2Router01]: 101876,
-              [RouterVersion.UniswapV2Router02]: 101898
+              [RouterVersion.UniswapV2Router01]: 115428,
+              [RouterVersion.UniswapV2Router02]: 115450
             }[routerVersion as RouterVersion]
           )
         }).retries(3)
@@ -517,8 +517,8 @@ describe('UniswapV2Router{01,02}', () => {
           const receipt = await tx.wait()
           expect(receipt.gasUsed).to.eq(
             {
-              [RouterVersion.UniswapV2Router01]: 138770,
-              [RouterVersion.UniswapV2Router02]: 138770
+              [RouterVersion.UniswapV2Router01]: 122281,
+              [RouterVersion.UniswapV2Router02]: 122281
             }[routerVersion as RouterVersion]
           )
         }).retries(3)

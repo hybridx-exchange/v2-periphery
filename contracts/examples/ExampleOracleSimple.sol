@@ -2,8 +2,8 @@ pragma solidity =0.6.6;
 
 import '@uniswap/lib/contracts/libraries/FixedPoint.sol';
 
-import '../interfaces/IUniswapV2Factory.sol';
-import '../interfaces/IUniswapV2Pair.sol';
+import '@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
+import '@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 import '../libraries/UniswapV2OracleLibrary.sol';
 import '../libraries/UniswapV2Library.sol';
 

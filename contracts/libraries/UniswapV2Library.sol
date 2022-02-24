@@ -1,6 +1,9 @@
 pragma solidity >=0.5.0;
 
-import '../interfaces/IUniswapV2Pair.sol';
+import "@hybridx-exchange/orderbook-core/contracts/interfaces/IOrderBook.sol";
+import "@hybridx-exchange/orderbook-core/contracts/interfaces/IOrderBookFactory.sol";
+import "@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import "@hybridx-exchange/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "./SafeMath.sol";
 
 library UniswapV2Library {
@@ -17,11 +20,11 @@ library UniswapV2Library {
     function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
         (address token0, address token1) = sortTokens(tokenA, tokenB);
         pair = address(uint(keccak256(abi.encodePacked(
-                hex'ff',
-                factory,
-                keccak256(abi.encodePacked(token0, token1)),
-                hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash
-            ))));
+            hex'ff',
+            factory,
+            keccak256(abi.encodePacked(token0, token1)),
+            IUniswapV2Factory(factory).getCodeHash() // init code hash
+        ))));
     }
 
     // fetches and sorts the reserves for a pair
@@ -57,14 +60,28 @@ library UniswapV2Library {
         amountIn = (numerator / denominator).add(1);
     }
 
+    function getOrderBook(address factory, address tokenA, address tokenB) internal view returns (address orderBook) {
+        address orderBookFactory = IUniswapV2Factory(factory).getOrderBookFactory();
+        if (orderBookFactory != address(0)){
+            return IOrderBookFactory(orderBookFactory).getOrderBook(tokenA, tokenB);
+        }
+    }
+
     // performs chained getAmountOut calculations on any number of pairs
     function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
         amounts = new uint[](path.length);
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+            address orderBook = getOrderBook(factory, path[i], path[i + 1]);
+            if (orderBook != address(0)) {
+                //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
+                amounts[i + 1] = IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amounts[i]);
+            }
+            else {
+                (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
+                amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+            }
         }
     }
 
@@ -74,8 +91,15 @@ library UniswapV2Library {
         amounts = new uint[](path.length);
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+            address orderBook = getOrderBook(factory, path[i - 1], path[i]);
+            if (orderBook != address(0)) {
+                //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
+                amounts[i - 1] = IOrderBook(orderBook).getAmountInForMovePrice(path[i], amounts[i]);
+            }
+            else {
+                (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
+                amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+            }
         }
     }
 }

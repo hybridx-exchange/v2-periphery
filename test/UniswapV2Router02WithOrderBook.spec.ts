@@ -5,7 +5,7 @@ import { BigNumber, bigNumberify } from 'ethers/utils'
 import { MaxUint256 } from 'ethers/constants'
 import IUniswapV2Pair from '@hybridx-exchange/v2-core/build/IUniswapV2Pair.json'
 
-import { v2Fixture } from './shared/fixtures'
+import { v2OrderBookFixture } from './shared/fixtures'
 import { expandTo18Decimals, getApprovalDigest, MINIMUM_LIQUIDITY } from './shared/utilities'
 
 import DeflatingERC20 from '../build/DeflatingERC20.json'
@@ -29,11 +29,15 @@ describe('UniswapV2Router02', () => {
   let token0: Contract
   let token1: Contract
   let router: Contract
+  let orderBookFactory: Contract
+  let orderBookRouter: Contract
   beforeEach(async function() {
-    const fixture = await loadFixture(v2Fixture)
+    const fixture = await loadFixture(v2OrderBookFixture)
     token0 = fixture.token0
     token1 = fixture.token1
     router = fixture.router02
+    orderBookFactory = fixture.orderBookFactory
+    orderBookRouter = fixture.orderBookRouter
   })
 
   it('quote', async () => {
@@ -113,6 +117,8 @@ describe('UniswapV2Router02', () => {
       overrides
     )
 
+    await orderBookFactory.createOrderBook()
+
     await expect(router.getAmountsIn(bigNumberify(1), [token0.address])).to.be.revertedWith(
       'UniswapV2Library: INVALID_PATH'
     )
@@ -135,7 +141,7 @@ describe('fee-on-transfer tokens', () => {
   let router: Contract
   let pair: Contract
   beforeEach(async function() {
-    const fixture = await loadFixture(v2Fixture)
+    const fixture = await loadFixture(v2OrderBookFixture)
 
     WETH = fixture.WETH
     router = fixture.router02
@@ -321,7 +327,7 @@ describe('fee-on-transfer tokens: reloaded', () => {
   let DTT2: Contract
   let router: Contract
   beforeEach(async function() {
-    const fixture = await loadFixture(v2Fixture)
+    const fixture = await loadFixture(v2OrderBookFixture)
 
     router = fixture.router02
 

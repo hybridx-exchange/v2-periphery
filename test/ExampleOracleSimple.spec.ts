@@ -11,7 +11,7 @@ import ExampleOracleSimple from '../build/ExampleOracleSimple.json'
 chai.use(solidity)
 
 const overrides = {
-  gasLimit: 9999999
+  gasLimit: 99999999
 }
 
 const token0Amount = expandTo18Decimals(5)
@@ -21,7 +21,7 @@ describe('ExampleOracleSimple', () => {
   const provider = new MockProvider({
     hardfork: 'istanbul',
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-    gasLimit: 9999999
+    gasLimit: 99999999
   })
   const [wallet] = provider.getWallets()
   const loadFixture = createFixtureLoader(provider, [wallet])
