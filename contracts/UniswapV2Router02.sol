@@ -1,4 +1,5 @@
 pragma solidity =0.6.6;
+pragma experimental ABIEncoderV2;
 
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
@@ -442,5 +443,43 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         returns (uint[] memory amounts)
     {
         return UniswapV2Library.getAmountsIn(factory, amountOut, path);
+    }
+
+    function getBestAmountsOut(uint amountIn, address[] memory paths, uint[] memory lens)
+        public
+        view
+        virtual
+        override
+        returns (address[] memory path, uint[] memory amounts)
+    {
+        address[][] memory groupedPaths = new address[][](lens.length);
+        uint k;
+        for (uint i; i<lens.length; i++) {
+            groupedPaths[i] = new address[](lens[i]);
+            for (uint j; j<groupedPaths[i].length; j++) {
+                groupedPaths[i][j] = paths[k++];
+            }
+        }
+        require(paths.length == k, "UniswapV2Router: INVALID_PATHS")
+        return UniswapV2Library.getBestAmountsOut(factory, amountIn, groupedPaths);
+    }
+
+    function getBestAmountsIn(uint amountOut, address[] memory paths, uint[] memory lens)
+        public
+        view
+        virtual
+        override
+        returns (address[] memory path, uint[] memory amounts)
+    {
+        address[][] memory groupedPaths = new address[][](lens.length);
+        uint k;
+        for (uint i; i<lens.length; i++) {
+            groupedPaths[i] = new address[](lens[i]);
+            for (uint j; j<groupedPaths[i].length; j++) {
+                groupedPaths[i][j] = paths[k++];
+            }
+        }
+        require(paths.length == k, "UniswapV2Router: INVALID_PATHS")
+        return UniswapV2Library.getBestAmountsIn(factory, amountOut, groupedPaths);
     }
 }

@@ -85,6 +85,26 @@ library UniswapV2Library {
         }
     }
 
+    function getBestAmountsOut(address factory, uint amountIn, address[][] memory paths)
+    internal
+    view
+    returns (address[] memory path, uint[] memory amounts) {
+        require(paths.length >= 1, 'UniswapV2Library: INVALID_PATHS');
+        uint[][] memory amountsTmp = new uint[][](paths.length);
+        uint index = paths.length;
+        uint maxAmountOut;
+        for (uint i; i<paths.length; i++){
+            amountsTmp[i] = getAmountsOut(factory, amountIn, paths[i]);
+            if (maxAmountOut < amountsTmp[i][amountsTmp[i].length-1]) {
+                index = i;
+                maxAmountOut = amountsTmp[i][amountsTmp[i].length-1];
+            }
+        }
+
+        path = paths[index];
+        amounts = amountsTmp[index];
+    }
+
     // performs chained getAmountIn calculations on any number of pairs
     function getAmountsIn(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
@@ -101,5 +121,25 @@ library UniswapV2Library {
                 amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
             }
         }
+    }
+
+    function getBestAmountsIn(address factory, uint amountOut, address[][] memory paths)
+    internal
+    view
+    returns (address[] memory path, uint[] memory amounts) {
+        require(paths.length >= 1, 'UniswapV2Library: INVALID_PATHS');
+        uint[][] memory amountsTmp = new uint[][](paths.length);
+        uint index;
+        uint minAmountIn = uint(-1);
+        for (uint i; i<paths.length; i++){
+            amountsTmp[i] = getAmountsIn(factory, amountOut, paths[i]);
+            if (minAmountIn > amountsTmp[i][0]) {
+                index = i;
+                minAmountIn = amountsTmp[i][0];
+            }
+        }
+
+        path = paths[index];
+        amounts = amountsTmp[index];
     }
 }

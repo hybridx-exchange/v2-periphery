@@ -1,6 +1,6 @@
 {
   "name": "@hybridx-exchange/v2-periphery",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "🎚 Peripheral smart contracts for interacting with Hybridx Exchange",
   "engines": {
     "node": ">=10"
