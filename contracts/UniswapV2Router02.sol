@@ -460,7 +460,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
                 groupedPaths[i][j] = paths[k++];
             }
         }
-        require(paths.length == k, "UniswapV2Router: INVALID_PATHS")
+        require(paths.length == k, "UniswapV2Router: INVALID_PATHS");
         return UniswapV2Library.getBestAmountsOut(factory, amountIn, groupedPaths);
     }
 
@@ -479,7 +479,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
                 groupedPaths[i][j] = paths[k++];
             }
         }
-        require(paths.length == k, "UniswapV2Router: INVALID_PATHS")
+        require(paths.length == k, "UniswapV2Router: INVALID_PATHS");
         return UniswapV2Library.getBestAmountsIn(factory, amountOut, groupedPaths);
     }
 }
