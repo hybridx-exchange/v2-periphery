@@ -76,7 +76,7 @@ library UniswapV2Library {
             address orderBook = getOrderBook(factory, path[i], path[i + 1]);
             if (orderBook != address(0)) {
                 //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
-                amounts[i + 1] = IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amounts[i]);
+                (amounts[i + 1], ,) = IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amounts[i]);
             }
             else {
                 (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
@@ -114,7 +114,7 @@ library UniswapV2Library {
             address orderBook = getOrderBook(factory, path[i - 1], path[i]);
             if (orderBook != address(0)) {
                 //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
-                amounts[i - 1] = IOrderBook(orderBook).getAmountInForMovePrice(path[i], amounts[i]);
+                (amounts[i - 1], ,) = IOrderBook(orderBook).getAmountInForMovePrice(path[i], amounts[i]);
             }
             else {
                 (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
