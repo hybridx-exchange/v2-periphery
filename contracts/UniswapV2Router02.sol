@@ -450,7 +450,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         view
         virtual
         override
-        returns (address[] memory path, uint[] memory amounts)
+        returns (address[] memory path, uint[] memory amounts, uint[] memory nextReserves)
     {
         address[][] memory groupedPaths = new address[][](lens.length);
         uint k;
@@ -469,7 +469,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         view
         virtual
         override
-        returns (address[] memory path, uint[] memory amounts)
+        returns (address[] memory path, uint[] memory amounts, uint[] memory nextReserves)
     {
         address[][] memory groupedPaths = new address[][](lens.length);
         uint k;

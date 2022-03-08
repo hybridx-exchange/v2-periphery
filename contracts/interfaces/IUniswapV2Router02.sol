@@ -43,7 +43,7 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
         uint deadline
     ) external;
     function getBestAmountsOut(uint amountIn, address[] calldata paths, uint[] calldata lens) external view returns (
-        address[] memory path, uint[] memory amounts);
+        address[] memory path, uint[] memory amounts, uint[] memory nextReserves);
     function getBestAmountsIn(uint amountOut, address[] calldata paths, uint[] calldata lens) external view returns (
-        address[] memory path, uint[] memory amounts);
+        address[] memory path, uint[] memory amounts, uint[] memory nextReserves);
 }

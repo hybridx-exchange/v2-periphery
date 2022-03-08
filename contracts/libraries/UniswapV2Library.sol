@@ -76,7 +76,7 @@ library UniswapV2Library {
             address orderBook = getOrderBook(factory, path[i], path[i + 1]);
             if (orderBook != address(0)) {
                 //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
-                (amounts[i + 1], ,) = IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amounts[i]);
+                (amounts[i + 1],,) = IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amounts[i]);
             }
             else {
                 (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
@@ -85,28 +85,61 @@ library UniswapV2Library {
         }
     }
 
+
+    // performs chained getAmountOut calculations on any number of pairs
+    function getAmountsOutWithNextReserves(address factory, uint amountIn, address[] memory path)
+    internal
+    view
+    returns (uint[] memory amounts, uint[] memory nextReserves) {
+        require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
+        amounts = new uint[](path.length);
+        amounts[0] = amountIn;
+        nextReserves = new uint[](2 * (path.length - 1));
+        for (uint i; i < path.length - 1; i++) {
+            address orderBook = getOrderBook(factory, path[i], path[i + 1]);
+            if (orderBook != address(0)) {
+                //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
+                address baseToken = IOrderBook(orderBook).baseToken();
+                uint nextReserveBase;
+                uint nextReserveQuote;
+                (amounts[i + 1], nextReserveBase, nextReserveQuote) =
+                    IOrderBook(orderBook).getAmountOutForMovePrice(path[i], amounts[i]);
+                (nextReserves[2 * i], nextReserves[2 * i + 1]) = baseToken == path[i] ?
+                    (nextReserveBase, nextReserveQuote) : (nextReserveQuote, nextReserveBase);
+            }
+            else {
+                (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
+                amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+                (nextReserves[2 * i], nextReserves[2 * i + 1]) = (reserveIn + amounts[i], reserveOut - amounts[i + 1]);
+            }
+        }
+    }
+
     function getBestAmountsOut(address factory, uint amountIn, address[][] memory paths)
     internal
     view
-    returns (address[] memory path, uint[] memory amounts) {
+    returns (address[] memory path, uint[] memory amounts, uint[] memory nextReserves) {
         require(paths.length >= 1, 'UniswapV2Library: INVALID_PATHS');
-        uint[][] memory amountsTmp = new uint[][](paths.length);
         uint index = paths.length;
         uint maxAmountOut;
-        for (uint i; i<paths.length; i++){
-            amountsTmp[i] = getAmountsOut(factory, amountIn, paths[i]);
-            if (maxAmountOut < amountsTmp[i][amountsTmp[i].length-1]) {
-                index = i;
-                maxAmountOut = amountsTmp[i][amountsTmp[i].length-1];
+        for (uint i; i<paths.length; i++) {
+            (uint[] memory amountsTmp, uint[] memory nextReservesTmp) =
+                getAmountsOutWithNextReserves(factory, amountIn, paths[i]);
+            if (maxAmountOut < amountsTmp[amountsTmp.length-1]) {
+                (index, maxAmountOut, amounts, nextReserves) =
+                    (i, amountsTmp[amountsTmp.length-1], amountsTmp, nextReservesTmp);
             }
         }
 
+        assert(index != paths.length);
         path = paths[index];
-        amounts = amountsTmp[index];
     }
 
     // performs chained getAmountIn calculations on any number of pairs
-    function getAmountsIn(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
+    function getAmountsIn(address factory, uint amountOut, address[] memory path)
+    internal
+    view
+    returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
         amounts = new uint[](path.length);
         amounts[amounts.length - 1] = amountOut;
@@ -114,7 +147,7 @@ library UniswapV2Library {
             address orderBook = getOrderBook(factory, path[i - 1], path[i]);
             if (orderBook != address(0)) {
                 //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
-                (amounts[i - 1], ,) = IOrderBook(orderBook).getAmountInForMovePrice(path[i], amounts[i]);
+                (amounts[i - 1],,) = IOrderBook(orderBook).getAmountInForMovePrice(path[i], amounts[i]);
             }
             else {
                 (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
@@ -123,23 +156,52 @@ library UniswapV2Library {
         }
     }
 
+    // performs chained getAmountIn calculations on any number of pairs
+    function getAmountsInWithNextReserves(address factory, uint amountOut, address[] memory path)
+    internal
+    view
+    returns (uint[] memory amounts, uint[] memory nextReserves) {
+        require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
+        amounts = new uint[](path.length);
+        nextReserves = new uint[](2 * (path.length - 1));
+        amounts[amounts.length - 1] = amountOut;
+        for (uint i = path.length - 1; i > 0; i--) {
+            address orderBook = getOrderBook(factory, path[i - 1], path[i]);
+            if (orderBook != address(0)) {
+                //只包含订单价格之内的amm数量+订单数量，不包括订单价格之外的数量
+                address baseToken = IOrderBook(orderBook).baseToken();
+                uint nextReserveBase;
+                uint nextReserveQuote;
+                (amounts[i - 1], nextReserveBase, nextReserveQuote) =
+                IOrderBook(orderBook).getAmountInForMovePrice(path[i], amounts[i]);
+                (nextReserves[2 * (i - 1)], nextReserves[2 * (i - 1) + 1]) = baseToken == path[i] ?
+                    (nextReserveBase, nextReserveQuote) : (nextReserveQuote, nextReserveBase);
+            }
+            else {
+                (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
+                amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+                (nextReserves[2 * (i - 1)], nextReserves[2 * (i - 1) + 1]) =
+                    (reserveIn + amounts[i - 1], reserveOut - amounts[i]);
+            }
+        }
+    }
+
     function getBestAmountsIn(address factory, uint amountOut, address[][] memory paths)
     internal
     view
-    returns (address[] memory path, uint[] memory amounts) {
+    returns (address[] memory path, uint[] memory amounts, uint[] memory nextReserves) {
         require(paths.length >= 1, 'UniswapV2Library: INVALID_PATHS');
-        uint[][] memory amountsTmp = new uint[][](paths.length);
         uint index;
         uint minAmountIn = uint(-1);
         for (uint i; i<paths.length; i++){
-            amountsTmp[i] = getAmountsIn(factory, amountOut, paths[i]);
-            if (minAmountIn > amountsTmp[i][0]) {
-                index = i;
-                minAmountIn = amountsTmp[i][0];
+            (uint[] memory amountsTmp, uint[] memory nextReservesTmp) =
+                getAmountsInWithNextReserves(factory, amountOut, paths[i]);
+            if (minAmountIn > amountsTmp[0]) {
+                (index, minAmountIn, amounts, nextReserves) = (i, amountsTmp[0], amountsTmp, nextReservesTmp);
             }
         }
 
+        assert(index != paths.length);
         path = paths[index];
-        amounts = amountsTmp[index];
     }
 }
