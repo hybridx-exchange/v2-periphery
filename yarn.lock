@@ -215,15 +215,15 @@
     "@ethersproject/properties" "^5.5.0"
     "@ethersproject/strings" "^5.5.0"
 
-"@hybridx-exchange/orderbook-core@0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-0.2.0.tgz#36b759ff3d0839377d834ffceb8e107f84bd5f0c"
-  integrity sha512-KhSA8EBcKDPEwPA52ZZ+2m141k90UGiGbfuXbywrz3Urga7t6RtWSq3mxiEx7IxoVUjovXVVl2m5ZGbIqPq2WA==
+"@hybridx-exchange/orderbook-core@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/orderbook-core/-/orderbook-core-1.1.0.tgz#16df36f08d5498eaf55a0c44b200b0312d3b2f23"
+  integrity sha512-wzgTXWKbMJzfk+t0YscFzWTXcEaSmj90q0G03uWAA/P1ZX673boO3HoS2MmJApmor44CJ1pP83XHHOLcs7wMRw==
 
-"@hybridx-exchange/v2-core@0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-0.2.0.tgz#7e2bf3ec721435db6f396aba8f4357c72ea90c22"
-  integrity sha512-YXDTfXUjV2cXvEy+qLFtvoCI6515lJCjAFdxzz9LLIbkvslumjVV7NwDhYwe+EeAR9fpLiSjmVqq6VYMghk8nw==
+"@hybridx-exchange/v2-core@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@hybridx-exchange/v2-core/-/v2-core-1.1.0.tgz#f15bd33adf5190029ff50245b7706e35b6285e27"
+  integrity sha512-3nfvfDGLJD2MSHTD2I9cSwIVGbVB71tOS/h27OzVWbulPDgABuR76mximwJZX3d+alEe7aLaxMIAkleDOk0llA==
 
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
